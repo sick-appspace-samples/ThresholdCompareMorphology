@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<manifest>
+    <application name="ThresholdCompareMorphology">
+        <crown name="grayMorphologyThreshold">
+            <desc>user script</desc>
+        </crown>
+        <meta key="author">AppSpace Sample</meta>
+        <meta key="version">1.0</meta>
+        <meta key="licensed">false</meta>
+        <meta key="priority">low</meta>
+        <meta key="read-protected">false</meta>
+        <meta key="copy-protected">false</meta>
+        <entry path="pages" default="AppSpaceViewers-2.4.0.1.msdd">
+            <file type="application/zip">AppSpaceViewers-2.4.0.1.msdd</file>
+        </entry>
+        <entry path="resources">
+            <file type="image">BackgroundImage.bmp</file>
+            <file type="image">ObjectImage.bmp</file>
+        </entry>
+        <entry path="scripts" default="ThresholdCompareMorphology.lua">
+            <file type="text/x-lua">ThresholdCompareMorphology.lua</file>
+        </entry>
+    </application>
+</manifest>
