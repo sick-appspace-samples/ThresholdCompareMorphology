@@ -6,24 +6,23 @@ print('AppEngine Version: ' .. Engine.getVersion())
 local DELAY = 1500 -- ms between visualization steps for demonstration purpose
 
 -- Creating viewer
-local viewer = View.create("viewer2D1")
+local viewer = View.create()
 
-local regionDecoration = View.PixelRegionDecoration.create()
-regionDecoration:setColor(0, 150, 0, 150)
+local regionDecoration = View.PixelRegionDecoration.create():setColor(0, 150, 0, 150)
 
 local textDecoration = View.TextDecoration.create()
-textDecoration:setColor(0, 0, 255)
-textDecoration:setSize(120)
-textDecoration:setPosition(50, 150, 0)
+textDecoration:setColor(0, 0, 255):setSize(120):setPosition(50, 150, 0)
 
 --End of Global Scope-----------------------------------------------------------
 
 --Start of Function and Event Scope---------------------------------------------
 
--- This function does segmentation by thresholding the foreground image only.
--- The found region contains large areas outside the object due to the overlap
--- in intensity range caused by the uneven illumination.
---@directThreshold(img:Image, bg:Image) : Image.PixelRegion, float
+---This function does segmentation by thresholding the foreground image only.
+---The found region contains large areas outside the object due to the overlap
+---in intensity range caused by the uneven illumination.
+---@param img Image
+---@return Image.PixelRegion
+---@return integer
 local function directThreshold(img)
   local startTime = DateTime.getTimestamp()
   local foundRegion = Image.threshold(img, 0, 165)
@@ -32,11 +31,14 @@ local function directThreshold(img)
   return foundRegion, (endTime - startTime)
 end
 
--- This function does segmentation by thresholding the foreground image relative
--- to each corresponding pixel value in the background image.
--- The output region is mainly correct but there are many background pixels
--- included and foreground pixels missed.
---@thresholdCompare(img:Image, bg:Image) : Image.PixelRegion, float
+---This function does segmentation by thresholding the foreground image relative
+---to each corresponding pixel value in the background image.
+---The output region is mainly correct but there are many background pixels
+---included and foreground pixels missed.
+---@param img Image
+---@param bg Image
+---@return Image.PixelRegion
+---@return integer
 local function thresholdCompare(img, bg)
   local startTime = DateTime.getTimestamp()
   local foundRegion = Image.thresholdCompare(img, bg, 8, false)
@@ -45,12 +47,15 @@ local function thresholdCompare(img, bg)
   return foundRegion, (endTime - startTime)
 end
 
--- This function does segmentation by thresholdCompare. Noise in the
--- background and foreground images is removed by grayscale morphological
--- operations prior to thresholding, providing a clean segmentation.
--- Processing of the background image is not included in the processing
--- time as that can be done once in advance in a real application.
---@preThresholdCleanup(img:Image, bg:Image) : Image.PixelRegion, float
+---This function does segmentation by thresholdCompare. Noise in the
+---background and foreground images is removed by grayscale morphological
+---operations prior to thresholding, providing a clean segmentation.
+---Processing of the background image is not included in the processing
+---time as that can be done once in advance in a real application.
+---@param img Image
+---@param bg Image
+---@return Image.PixelRegion
+---@return integer
 local function preThresholdCleanup(img, bg)
   local bgo = bg:morphology(7, 'OPEN')
   local startTime = DateTime.getTimestamp()
@@ -61,10 +66,13 @@ local function preThresholdCleanup(img, bg)
   return foundRegion, (endTime - startTime)
 end
 
--- This function does segmentation by thresholdCompare. Noise in the
--- pixel region is removed by morphological operations after thresholding,
--- providing a clean segmentation.
---@postThresholdCleanup(img:Image, bg:Image) : Image.PixelRegion, float
+---This function does segmentation by thresholdCompare. Noise in the
+---pixel region is removed by morphological operations after thresholding,
+---providing a clean segmentation.
+---@param img Image
+---@param bg Image
+---@return Image.PixelRegion
+---@return integer
 local function postThresholdCleanup(img, bg)
   local startTime = DateTime.getTimestamp()
   -- Threshold relative to background image
@@ -83,33 +91,39 @@ local function main()
 
   -- Show background image
   viewer:clear()
-  local imview = viewer:addImage(backgroundIm)
-  viewer:addText('BACKGROUND', textDecoration, nil, imview)
+  viewer:addImage(backgroundIm)
+  viewer:addText('BACKGROUND', textDecoration)
   viewer:present()
   Script.sleep(DELAY / 2)
 
   -- Show foreground image
   viewer:clear()
-  imview = viewer:addImage(foregroundIm)
-  viewer:addText('FOREGROUND', textDecoration, nil, imview)
+  viewer:addImage(foregroundIm)
+  viewer:addText('FOREGROUND', textDecoration)
   viewer:present()
   Script.sleep(DELAY / 2)
 
   -- Run different approaches for low contrast segmentation
   local segmentationFunctions = {
-    ['directThreshold'] = directThreshold,
-    ['thresholdCompare'] = thresholdCompare,
-    ['preThresholdCleanup'] = preThresholdCleanup,
-    ['postThresholdCleanup'] = postThresholdCleanup
+    directThreshold,
+    thresholdCompare,
+    preThresholdCleanup,
+    postThresholdCleanup
   }
-  for name, func in pairs(segmentationFunctions) do
+  local segmentationFunctionNames = {
+    'directThreshold',
+    'thresholdCompare',
+    'preThresholdCleanup',
+    'postThresholdCleanup'}
+  for i, func in ipairs(segmentationFunctions) do
     local foundRegion, time_ms = func(foregroundIm, backgroundIm)
+    local name = segmentationFunctionNames[i]
     print(name .. ', time: ' .. tostring(time_ms) .. ' ms')
 
     viewer:clear()
-    imview = viewer:addImage(foregroundIm)
-    viewer:addText(name, textDecoration, nil, imview)
-    viewer:addPixelRegion(foundRegion, regionDecoration, nil, imview)
+    viewer:addImage(foregroundIm)
+    viewer:addText(name, textDecoration)
+    viewer:addPixelRegion(foundRegion, regionDecoration)
     viewer:present()
     Script.sleep(DELAY)
   end
